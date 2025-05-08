@@ -77,9 +77,11 @@ def deployDash(data):
                       color="Test Type",
                       facet_col="Test Type",
                       title="Mean Values by Topic (Pretest)",
-                      color_discrete_map={"Pretest": "lightblue"}
+                      color_discrete_map={"Pretest": "lightblue"},
+                      text="Mean Values"
                      )
-    fig_mean_pre.update_yaxes(range=[0, 100])
+    fig_mean_pre.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig_mean_pre.update_yaxes(range=[0, 105])
 
     fig_mean_post = px.bar(usedData_mean_post,
                       x="Topics",
@@ -87,9 +89,11 @@ def deployDash(data):
                       color="Test Type",
                       facet_col="Test Type",
                       title="Mean Values by Topic (Posttest)",
-                      color_discrete_map={"Posttest": "pink"}
+                      color_discrete_map={"Posttest": "pink"},
+                      text="Mean Values"
                      )
-    fig_mean_post.update_yaxes(range=[0, 100])
+    fig_mean_post.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig_mean_post.update_yaxes(range=[0, 105])
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(fig_mean_pre)
@@ -108,9 +112,11 @@ def deployDash(data):
     fig_mean_dif = px.bar(diffUsed,
                       x="Topics",
                       y="Difference",
-                      title="Mean Difference Values by Topic"
+                      title="Mean Difference Values by Topic",
+                      text="Difference",
                      )
-    fig_mean_dif.update_yaxes(range=[0, 100])
+    fig_mean_dif.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig_mean_dif.update_yaxes(range=[0, 105])
     st.plotly_chart(fig_mean_dif)
 
 
@@ -138,18 +144,22 @@ def deployDash(data):
                       color="Test Type",
                       facet_col="Test Type",
                       title="Coefficent of Variation Values by Topic (Pretest)",
-                      color_discrete_map={"Pretest": "lightblue"}
+                      color_discrete_map={"Pretest": "lightblue"},
+                      text="Coefficent of Variation Values"
                      )
-    fig_cv_pre.update_yaxes(range=[0, 2])
+    fig_cv_pre.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig_cv_pre.update_yaxes(range=[0,2.5])
     fig_cv_post = px.bar(usedData_cv_post,
                       x="Topics",
                       y="Coefficent of Variation Values",
                       color="Test Type",
                       facet_col="Test Type",
                       title="Coefficent of Variation Values by Topic (Posttest)",
+                      text="Coefficent of Variation Values",
                       color_discrete_map={"Posttest": "pink"}
                      )
-    fig_cv_post.update_yaxes(range=[0, 2])
+    fig_cv_post.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig_cv_post.update_yaxes(range=[0,2.5])
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(fig_cv_pre)

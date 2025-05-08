@@ -80,6 +80,7 @@ def deployDash(data):
                       color_discrete_map={"Pretest": "lightblue"}
                      )
     fig_mean_pre.update_yaxes(range=[0, 100])
+
     fig_mean_post = px.bar(usedData_mean_post,
                       x="Topics",
                       y="Mean Values",
@@ -95,6 +96,22 @@ def deployDash(data):
 
     with col2:
         st.plotly_chart(fig_mean_post)
+
+    meanPivot = meanDf.pivot(index="Topics", columns="Test Type", values="Mean Values").reset_index()
+    meanPivot["Difference"] = meanPivot["Posttest"] - meanPivot["Pretest"]
+
+    if sortHow == "None":
+         diffUsed = meanPivot
+    else:
+         diffUsed = meanPivot.sort_values(by="Difference",ascending=sort_by)
+
+    fig_mean_dif = px.bar(diffUsed,
+                      x="Topics",
+                      y="Difference",
+                      title="Mean Difference Values by Topic"
+                     )
+    fig_mean_dif.update_yaxes(range=[0, 100])
+    st.plotly_chart(fig_mean_dif)
 
 
     cvVal = list(bktk_agg_trans["Coefficent of Variation"])

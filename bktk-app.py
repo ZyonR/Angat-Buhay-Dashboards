@@ -56,7 +56,10 @@ def deployDash(data):
 
     fig_mean = px.bar(sorted_means,x="Topics",y="Mean Values",color="Test Type",
         facet_col="Test Type",
-        title="Mean Values by Topic (Pretest vs Posttest)")
+        title="Mean Values by Topic (Pretest vs Posttest)",
+        category_orders={"Test Type": ["Pretest", "Posttest"]},
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
+                     )
     st.plotly_chart(fig_mean)
 
 
@@ -75,7 +78,10 @@ def deployDash(data):
 
     fig_cv = px.bar(sorted_cv,x="Topics",y="Coefficent of Variation Values",color="Test Type",
         facet_col="Test Type",
-        title="Coefficent of Variation Values by Topic (Pretest vs Posttest)")
+        title="Coefficent of Variation Values by Topic (Pretest vs Posttest)",
+        category_orders={"Test Type": ["Pretest", "Posttest"]},
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
+                   )
     st.plotly_chart(fig_cv)
 
 

@@ -122,7 +122,7 @@ def deployDash(data):
         nbins=bin_num,
         title=f"{topic} Score Distribution (Pretest vs Posttest)",
         facet_col="Test Type",
-        color="Test Type"
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
     )
 
     st.write(f"Wilxon Signed Rank Test P-Value: ",p_value)

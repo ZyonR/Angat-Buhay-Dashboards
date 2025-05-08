@@ -62,19 +62,35 @@ def deployDash(data):
     else:
             sort_by = False
     meanDf["Topics"] = meanDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-    sorted_means = meanDf.sort_values(by="Mean Values",ascending=sort_by)
 
     if sortHow == "None":
-            usedData_mean = meanDf
+            usedData_mean_pre = meanDf[meanDf["Test Type"]=="Pretest"]
+            usedData_mean_post = meanDf[meanDf["Test Type"]=="Posttest"]
     else:
-            usedData_mean = sorted_means
-    fig_mean = px.bar(usedData_mean,x="Topics",y="Mean Values",color="Test Type",
-        facet_col="Test Type",
-        title="Mean Values by Topic (Pretest vs Posttest)",
-        category_orders={"Test Type": ["Pretest", "Posttest"]},
-        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
+            usedData_mean_pre = meanDf[meanDf["Test Type"]=="Pretest"].sort_values(by="Mean Values",ascending=sort_by)
+            usedData_mean_post = meanDf[meanDf["Test Type"]=="Posttest"].sort_values(by="Mean Values",ascending=sort_by)
+    fig_mean_pre = px.bar(usedData_mean_pre,
+                      x="Topics",
+                      y="Mean Values",
+                      color="Test Type",
+                      facet_col="Test Type",
+                      title="Mean Values by Topic (Pretest)",
+                      color_discrete_map={"Pretest": "lightblue"}
                      )
-    st.plotly_chart(fig_mean)
+    fig_mean_post = px.bar(usedData_mean_post,
+                      x="Topics",
+                      y="Mean Values",
+                      color="Test Type",
+                      facet_col="Test Type",
+                      title="Mean Values by Topic (Posttest)",
+                      color_discrete_map={"Posttest": "pink"}
+                     )
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(fig_mean_pre)
+
+    with col2:
+        st.plotly_chart(fig_mean_post)
 
 
     cvVal = list(bktk_agg_trans["Coefficent of Variation"])
@@ -88,19 +104,35 @@ def deployDash(data):
         lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
     )
     cvDf["Topics"] = cvDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-    sorted_cv = cvDf.sort_values(by="Coefficent of Variation Values",ascending=sort_by)
+    
     if sortHow == "None":
-            usedData_cv = cvDf
+            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"]
+            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"]
     else:
-            usedData_cv = sorted_cv
-                
-    fig_cv = px.bar(usedData_cv,x="Topics",y="Coefficent of Variation Values",color="Test Type",
-        facet_col="Test Type",
-        title="Coefficent of Variation Values by Topic (Pretest vs Posttest)",
-        category_orders={"Test Type": ["Pretest", "Posttest"]},
-        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
-                   )
-    st.plotly_chart(fig_cv)
+            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"].sort_values(by="Mean Values",ascending=sort_by)
+            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"].sort_values(by="Mean Values",ascending=sort_by)
+    fig_cv_pre = px.bar(usedData_cv_pre,
+                      x="Topics",
+                      y="Coefficent of Variation Values",
+                      color="Test Type",
+                      facet_col="Test Type",
+                      title="Coefficent of Variation Values by Topic (Pretest)",
+                      color_discrete_map={"Pretest": "lightblue"}
+                     )
+    fig_cv_post = px.bar(usedData_cv_post,
+                      x="Topics",
+                      y="Coefficent of Variation Values",
+                      color="Test Type",
+                      facet_col="Test Type",
+                      title="Coefficent of Variation Values by Topic (Posttest)",
+                      color_discrete_map={"Posttest": "pink"}
+                     )
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(fig_cv_pre)
+
+    with col2:
+        st.plotly_chart(fig_cv_post)
 
 
     long_bktk_df = bktk_df.melt(id_vars=["Name of Child","Grade Level"], var_name="Topics", value_name="Score")

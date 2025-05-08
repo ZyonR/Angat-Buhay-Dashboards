@@ -79,6 +79,7 @@ def deployDash(data):
                       title="Mean Values by Topic (Pretest)",
                       color_discrete_map={"Pretest": "lightblue"}
                      )
+    fig_mean_pre.update_yaxes(range=[0, 100])
     fig_mean_post = px.bar(usedData_mean_post,
                       x="Topics",
                       y="Mean Values",
@@ -87,6 +88,7 @@ def deployDash(data):
                       title="Mean Values by Topic (Posttest)",
                       color_discrete_map={"Posttest": "pink"}
                      )
+    fig_mean_post.update_yaxes(range=[0, 100])
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(fig_mean_pre)
@@ -121,6 +123,7 @@ def deployDash(data):
                       title="Coefficent of Variation Values by Topic (Pretest)",
                       color_discrete_map={"Pretest": "lightblue"}
                      )
+    fig_cv_pre.update_yaxes(range=[0, 2])
     fig_cv_post = px.bar(usedData_cv_post,
                       x="Topics",
                       y="Coefficent of Variation Values",
@@ -129,6 +132,7 @@ def deployDash(data):
                       title="Coefficent of Variation Values by Topic (Posttest)",
                       color_discrete_map={"Posttest": "pink"}
                      )
+    fig_cv_post.update_yaxes(range=[0, 2])
     col1, col2 = st.columns(2)
     with col1:
         st.plotly_chart(fig_cv_pre)

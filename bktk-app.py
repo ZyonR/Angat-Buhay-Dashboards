@@ -109,8 +109,8 @@ def deployDash(data):
             usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"]
             usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"]
     else:
-            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"].sort_values(by="Mean Values",ascending=sort_by)
-            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"].sort_values(by="Mean Values",ascending=sort_by)
+            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"].sort_values(by="Coefficent of Variation Values",ascending=sort_by)
+            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"].sort_values(by="Coefficent of Variation Values",ascending=sort_by)
     fig_cv_pre = px.bar(usedData_cv_pre,
                       x="Topics",
                       y="Coefficent of Variation Values",

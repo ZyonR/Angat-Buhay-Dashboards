@@ -2,12 +2,14 @@ import streamlit as st
 import pandas as pd
 from scipy.stats import wilcoxon
 import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(
         page_title="BKTK Angat Buhay",
         
     )
-st.write("## ANGAT BUHAY Bayan Ko Titser Ko (BKTK)")
+st.title("ANGAT BUHAY")
+st.write("### Bayan Ko Titser Ko (BKTK)")
 
 def deployDash(data):
     bktk_df = data.drop(columns=["No."])
@@ -180,6 +182,41 @@ def deployDash(data):
     st.write(f"Effect Size: ",round(effectSize,5))
 
     st.plotly_chart(fig_hist_gen)
+
+    st.title("Z-Scores")
+
+    long_bktk_df_zscore = long_bktk_df.copy()
+    for typeIter in list(long_bktk_df_zscore["Test Type"].unique()):
+          for topicIter in list(long_bktk_df_zscore["Topics"].unique()):
+                subset = long_bktk_df_zscore[
+            (long_bktk_df_zscore["Topics"] == topicIter) & 
+            (long_bktk_df_zscore["Test Type"] == typeIter)]
+                subset_mean = subset["Score"].mean()
+                subset_std = subset["Score"].std(ddof=0)
+
+                long_bktk_df_zscore.loc[(long_bktk_df_zscore["Topics"] == topicIter) & (long_bktk_df_zscore["Test Type"] == typeIter), "Score"] = (subset["Score"] - subset_mean) / subset_std
+    topicForZScore = st.selectbox(
+        "What topic do you want to explore the Z-score of?",
+        list(long_bktk_df["Topics"].unique()),
+        index=None,
+        placeholder="Select topic ...",
+        )
+    st.write("You have chosen topic: ",topicForZScore)
+
+    fig_scat = px.scatter(
+        long_bktk_df_zscore[long_bktk_df_zscore["Topics"]==topicForZScore],
+        x="Name of Child",
+        y="Score",
+        title=f"{topicForZScore} Z-Score Distribution (Pretest vs Posttest)",
+        color="Test Type",
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
+    )
+    fig_scat.update_layout(
+        height=600
+    )
+    st.plotly_chart(fig_scat)
+
+
 
 data = st.file_uploader(label="Upload your .csv file")
 if data:

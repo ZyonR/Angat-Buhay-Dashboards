@@ -36,7 +36,7 @@ def deployDash(data):
         labels={'Count': 'Number of Students'}
     )
 
-    st.plotly_chart(fig)
+    # st.plotly_chart(fig)
 
 
     st.write(bktk_agg_trans)

@@ -41,6 +41,12 @@ def deployDash(data):
 
     st.write(bktk_agg_trans)
 
+    sortHow = st.selectbox(
+        "How do you want to sort your data?",
+        ["None","Ascending","Descending"],
+        index=None,
+        placeholder="Select topic ...",
+        )    
     meanVal = list(bktk_agg_trans["Mean"])
     meanDf = pd.DataFrame(
         {
@@ -51,10 +57,18 @@ def deployDash(data):
     meanDf["Test Type"] = meanDf["Topics"].apply(
         lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
     )
+    if sortHow == "Ascending":
+            sort_by = True
+    else:
+            sort_by = False
     meanDf["Topics"] = meanDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-    sorted_means = meanDf.sort_values(by="Mean Values",ascending=False)
+    sorted_means = meanDf.sort_values(by="Mean Values",ascending=sort_by)
 
-    fig_mean = px.bar(sorted_means,x="Topics",y="Mean Values",color="Test Type",
+    if sortHow == "None":
+            usedData_mean = meanDf
+    else:
+            usedData_mean = sorted_means
+    fig_mean = px.bar(usedData_mean,x="Topics",y="Mean Values",color="Test Type",
         facet_col="Test Type",
         title="Mean Values by Topic (Pretest vs Posttest)",
         category_orders={"Test Type": ["Pretest", "Posttest"]},
@@ -74,9 +88,13 @@ def deployDash(data):
         lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
     )
     cvDf["Topics"] = cvDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-    sorted_cv = cvDf.sort_values(by="Coefficent of Variation Values",ascending=False)
-
-    fig_cv = px.bar(sorted_cv,x="Topics",y="Coefficent of Variation Values",color="Test Type",
+    sorted_cv = cvDf.sort_values(by="Coefficent of Variation Values",ascending=sort_by)
+    if sortHow == "None":
+            usedData_cv = cvDf
+    else:
+            usedData_cv = sorted_cv
+                
+    fig_cv = px.bar(usedData_cv,x="Topics",y="Coefficent of Variation Values",color="Test Type",
         facet_col="Test Type",
         title="Coefficent of Variation Values by Topic (Pretest vs Posttest)",
         category_orders={"Test Type": ["Pretest", "Posttest"]},
@@ -122,6 +140,7 @@ def deployDash(data):
         nbins=bin_num,
         title=f"{topic} Score Distribution (Pretest vs Posttest)",
         facet_col="Test Type",
+        color="Test Type",
         color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
     )
 

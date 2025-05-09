@@ -194,7 +194,7 @@ def deployDash(data):
     preTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Pretest")]["Score"]
     postTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Posttest")]["Score"]
 
-    # stat, p_value = wilcoxon(preTestScore, postTestScore)
+    stat, p_value = wilcoxon(preTestScore, postTestScore)
 
     # stat, p = wilcoxon(preTestScore, postTestScore)
 

@@ -196,8 +196,14 @@ def deployDash(data):
 
     stat, p_value = wilcoxon(preTestScore, postTestScore)
 
-    n = len(preTestScore)
-    effectSize = stat / (n ** 0.5)
+    stat, p = wilcoxon(preTestScore, postTestScore)
+
+     n = len(preTestScore)
+     mean_W = n * (n + 1) / 4
+     std_W = (n * (n + 1) * (2 * n + 1) / 24) ** 0.5
+     z = (stat - mean_W) / std_W
+     
+     effect_size_r = abs(z) / np.sqrt(n)
 
     fig_hist_gen = px.histogram(
         filtered_bktk_df,
@@ -210,7 +216,7 @@ def deployDash(data):
     )
 
     st.write(f"Wilxon Signed Rank Test P-Value: ",p_value)
-    st.write(f"Effect Size: ",round(effectSize,5))
+    st.write(f"Effect Size: ",round(effect_size_r,5))
 
     st.plotly_chart(fig_hist_gen)
 

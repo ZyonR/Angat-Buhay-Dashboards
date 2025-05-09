@@ -194,6 +194,9 @@ def deployDash(data):
 
     preTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Pretest")]["Score"]
     postTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Posttest")]["Score"]
+
+    st.write(preTestScore)
+    st.write(postTestScore)
         
     result = pg.wilcoxon(x=preTestScore, y=postTestScore, alternative='two-sided')
     st.write(result)
@@ -207,10 +210,6 @@ def deployDash(data):
         color="Test Type",
         color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
     )
-
-    st.write(f"Wilxon Signed Rank Test P-Value: ",p_value)
-    # st.write(f"Effect Size: ",round(effect_size_r,5))
-
     st.plotly_chart(fig_hist_gen)
 
     st.title("Z-Scores")

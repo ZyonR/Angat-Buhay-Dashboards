@@ -195,11 +195,8 @@ def deployDash(data):
     preTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Pretest")]["Score"]
     postTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Posttest")]["Score"]
 
-    st.write(preTestScore)
-    st.write(postTestScore)
-        
-    result = pg.wilcoxon(x=preTestScore, y=postTestScore, alternative='two-sided')
     if topic:
+        result = pg.wilcoxon(x=preTestScore, y=postTestScore, alternative='two-sided')
         st.write(result)
 
     fig_hist_gen = px.histogram(

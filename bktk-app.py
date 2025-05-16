@@ -4,16 +4,19 @@ from scipy.stats import wilcoxon
 import plotly.express as px
 import plotly.graph_objects as go
 import pingouin as pg
+from PIL import Image
+import requests
+from io import BytesIO
+import numpy as np
 
 st.set_page_config(
         page_title="BKTK Angat Buhay",
-        
+        layout="wide"
     )
-st.title("ANGAT BUHAY")
-st.write("### Bayan Ko Titser Ko (BKTK)")
 
-def deployDash(data):
-    bktk_df = data.drop(columns=["No."])
+def deployDash(data,data_wide):
+    bktk_df = data_wide.drop(columns=["#"])
+    bktk_df_long = data.drop(columns=["#"])
 
     numeric_bktk_df = bktk_df.select_dtypes(include='number')
 
@@ -21,187 +24,164 @@ def deployDash(data):
     cv = numeric_bktk_df.std() / numeric_bktk_df.mean()
     bktk_agg.loc['cv'] = cv
     bktk_agg.loc['std'] = numeric_bktk_df.std(ddof=0)
-
-    bktk_df_topics = bktk_agg.columns
     bktk_agg_trans = bktk_agg.T
 
     bktk_agg_trans.columns = ['Count', 'Mean',"Standard Deviation","Minimum","25%","50%","75%","Maximum","Coefficent of Variation"]
-
-    gradeCounts = bktk_df['Grade Level'].value_counts().reset_index()
-    gradeCounts.columns = ['Grade Level', 'Count']
-
-    fig = px.bar(
-        gradeCounts,
-        x='Grade Level',
-        y='Count',
-        color='Grade Level',
-        title='Number of Students per Grade Level',
-        labels={'Count': 'Number of Students'}
-    )
-
-    # st.plotly_chart(fig)
-
-
     st.write(bktk_agg_trans)
 
-    sortHow = st.selectbox(
-        "How do you want to sort your data?",
-        ["None","Ascending","Descending"],
-        index=None,
-        placeholder="Select topic ...",
-        )    
-    meanVal = list(bktk_agg_trans["Mean"])
-    meanDf = pd.DataFrame(
-        {
-            "Topics":bktk_df_topics,
-            "Mean Values": meanVal
-        }
-    )
-    meanDf["Test Type"] = meanDf["Topics"].apply(
-        lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
-    )
-    if sortHow == "Ascending":
-            sort_by = True
-    else:
-            sort_by = False
-    meanDf["Topics"] = meanDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-
-    if sortHow == "None":
-            usedData_mean_pre = meanDf[meanDf["Test Type"]=="Pretest"]
-            usedData_mean_post = meanDf[meanDf["Test Type"]=="Posttest"]
-    else:
-            usedData_mean_pre = meanDf[meanDf["Test Type"]=="Pretest"].sort_values(by="Mean Values",ascending=sort_by)
-            usedData_mean_post = meanDf[meanDf["Test Type"]=="Posttest"].sort_values(by="Mean Values",ascending=sort_by)
-    fig_mean_pre = px.bar(usedData_mean_pre,
-                      x="Topics",
-                      y="Mean Values",
-                      color="Test Type",
-                      facet_col="Test Type",
-                      title="Mean Values by Topic (Pretest)",
-                      color_discrete_map={"Pretest": "lightblue"},
-                      text="Mean Values"
-                     )
-    fig_mean_pre.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_mean_pre.update_yaxes(range=[0, 105])
-
-    fig_mean_post = px.bar(usedData_mean_post,
-                      x="Topics",
-                      y="Mean Values",
-                      color="Test Type",
-                      facet_col="Test Type",
-                      title="Mean Values by Topic (Posttest)",
-                      color_discrete_map={"Posttest": "pink"},
-                      text="Mean Values"
-                     )
-    fig_mean_post.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_mean_post.update_yaxes(range=[0, 105])
-    col1, col2 = st.columns(2)
+    col1,col2 = st.columns(2)
     with col1:
-        st.plotly_chart(fig_mean_pre)
-
+        sortHow = st.selectbox(
+            "How do you want to sort your data?",
+            ["None","Ascending","Descending"],
+            index=0,
+            placeholder="Select order ...",
+        )
     with col2:
-        st.plotly_chart(fig_mean_post)
-
-    meanPivot = meanDf.pivot(index="Topics", columns="Test Type", values="Mean Values").reset_index()
-    meanPivot["Difference"] = meanPivot["Posttest"] - meanPivot["Pretest"]
-
-    if sortHow == "None":
-         diffUsed = meanPivot
+        school_options = ["All"]+bktk_df_long["School"].unique().tolist()
+        filter_school = st.selectbox(
+            "What school do you want to look at?",
+            options=school_options,
+            index=0,
+            placeholder="Select School ...",
+        )
+    real_order = ["Alphabet Knowledge - Naming","Alphabet Knowledge - Sound","Decoding - Pantig","Decoding - Salita","Decoding - Parirala","Decoding - Pangungusap","Passage Reading","Comprehension"]
+    if filter_school!="All":
+        filtered_bktk_df_long = bktk_df_long[bktk_df_long["School"] == filter_school]
     else:
-         diffUsed = meanPivot.sort_values(by="Difference",ascending=sort_by)
-
-    fig_mean_dif = px.bar(diffUsed,
-                      x="Topics",
-                      y="Difference",
-                      title="Mean Difference Values by Topic",
-                      text="Difference",
-                     )
-    fig_mean_dif.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_mean_dif.update_yaxes(range=[0, 105])
-    st.plotly_chart(fig_mean_dif)
-
-
-    cvVal = list(bktk_agg_trans["Coefficent of Variation"])
-    cvDf = pd.DataFrame(
-        {
-            "Topics":bktk_df_topics,
-            "Coefficent of Variation Values": cvVal
-        }
-    )
-    cvDf["Test Type"] = cvDf["Topics"].apply(
-        lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
-    )
-    cvDf["Topics"] = cvDf["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
+        filtered_bktk_df_long = bktk_df_long
     
-    if sortHow == "None":
-            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"]
-            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"]
+    mean_scores = filtered_bktk_df_long.groupby(["Topics", "Test Type"])["Scores"].mean().reset_index()
+
+    topic_means = mean_scores.groupby("Topics")["Scores"].mean()
+
+    if sortHow == "Ascending":
+        sorted_topics = topic_means.sort_values(ascending=True).index.tolist()
+    elif sortHow == "Descending":
+        sorted_topics = topic_means.sort_values(ascending=False).index.tolist()
     else:
-            usedData_cv_pre = cvDf[cvDf["Test Type"]=="Pretest"].sort_values(by="Coefficent of Variation Values",ascending=sort_by)
-            usedData_cv_post = cvDf[cvDf["Test Type"]=="Posttest"].sort_values(by="Coefficent of Variation Values",ascending=sort_by)
-    fig_cv_pre = px.bar(usedData_cv_pre,
-                      x="Topics",
-                      y="Coefficent of Variation Values",
-                      color="Test Type",
-                      facet_col="Test Type",
-                      title="Coefficent of Variation Values by Topic (Pretest)",
-                      color_discrete_map={"Pretest": "lightblue"},
-                      text="Coefficent of Variation Values"
-                     )
-    fig_cv_pre.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_cv_pre.update_yaxes(range=[0,2.5])
-    fig_cv_post = px.bar(usedData_cv_post,
-                      x="Topics",
-                      y="Coefficent of Variation Values",
-                      color="Test Type",
-                      facet_col="Test Type",
-                      title="Coefficent of Variation Values by Topic (Posttest)",
-                      text="Coefficent of Variation Values",
-                      color_discrete_map={"Posttest": "pink"}
-                     )
-    fig_cv_post.update_traces(texttemplate='%{text:.2f}', textposition='outside')
-    fig_cv_post.update_yaxes(range=[0,2.5])
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(fig_cv_pre)
+        sorted_topics = real_order
 
-    with col2:
-        st.plotly_chart(fig_cv_post)
+    mean_scores["Topics"] = pd.Categorical(mean_scores["Topics"], categories=sorted_topics, ordered=True)
 
-
-    long_bktk_df = bktk_df.melt(id_vars=["Name of Child","Grade Level"], var_name="Topics", value_name="Score")
-    long_bktk_df["Test Type"] = long_bktk_df["Topics"].apply(
-        lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
+    fig_mean_pre = px.bar(
+        mean_scores,
+        x="Topics",
+        y="Scores",
+        color="Test Type",
+        facet_col="Test Type",
+        title="Mean Values by Topic (Pretest vs Posttest)",
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"},
+        text="Scores",
+        category_orders={"Topics": sorted_topics,"Test Type": ["Pretest","Posttest"]}
     )
-    long_bktk_df["Topics"] = long_bktk_df["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
 
-    col1, col2 = st.columns(2)
+    fig_mean_pre.update_traces(
+        texttemplate='%{text:.2f}',
+        textposition='outside'
+    )
+    fig_mean_pre.update_yaxes(range=[0, 100+15])
+
+    st.plotly_chart(fig_mean_pre)
+
+    mean_diff = mean_scores.pivot(index="Topics", columns="Test Type", values="Scores").reset_index()
+    mean_diff["Mean Difference"] = mean_diff["Posttest"] - mean_diff["Pretest"]
+
+    mean_diff["Topics"] = pd.Categorical(mean_diff["Topics"], categories=real_order, ordered=True)
+    if sortHow == "Ascending":
+        mean_diff = mean_diff.sort_values(by="Mean Difference", ascending=True)
+    elif sortHow == "Descending":
+        mean_diff = mean_diff.sort_values(by="Mean Difference", ascending=False)
+    
+    fig_mean_diff = px.bar(mean_diff,
+                      x="Topics",
+                      y="Mean Difference",
+                      title="Mean Difference by Topic",
+                      text="Mean Difference"
+                     )
+    fig_mean_diff.update_traces(
+        texttemplate='%{text:.2f}',
+        textposition='outside'
+    )
+    fig_mean_diff.update_yaxes(range=[0,np.max(mean_diff["Mean Difference"])+10])
+    st.plotly_chart(fig_mean_diff)
+
+    std_scores = filtered_bktk_df_long.groupby(["Topics", "Test Type"])["Scores"].std(ddof=0).reset_index()
+
+    topic_means = mean_scores.groupby("Topics")["Scores"].mean()
+
+    if sortHow == "Ascending":
+        sorted_topics = topic_means.sort_values(ascending=True).index.tolist()
+    elif sortHow == "Descending":
+        sorted_topics = topic_means.sort_values(ascending=False).index.tolist()
+    else:
+        sorted_topics = real_order
+
+    mean_scores["Topics"] = pd.Categorical(mean_scores["Topics"], categories=sorted_topics, ordered=True)
+    cv_scores = pd.merge(mean_scores, std_scores, on=["Topics", "Test Type"], suffixes=("_mean", "_std"))
+    cv_scores["Coefficient of Variation"] = cv_scores["Scores_std"] / cv_scores["Scores_mean"]
+
+    fig_cv = px.bar(
+        cv_scores,
+        x="Topics",
+        y="Coefficient of Variation",
+        color="Test Type",
+        facet_col="Test Type",
+        title="Coefficient of Variation Values by Topic (Pretest vs Posttest)",
+        color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"},
+        text="Coefficient of Variation",
+        category_orders={"Topics": sorted_topics,"Test Type": ["Pretest","Posttest"]}
+    )
+
+    fig_cv.update_traces(
+        texttemplate='%{text:.2f}',
+        textposition='outside'
+    )
+    fig_cv.update_yaxes(range=[0, np.max(cv_scores["Coefficient of Variation"])+0.1])
+
+    st.plotly_chart(fig_cv)
+
+    col1, col2,col3 = st.columns(3)
 
     with col1:
         topic = st.selectbox(
         "What topic do you want to explore?",
-        list(long_bktk_df["Topics"].unique()),
+        list(bktk_df_long["Topics"].unique()),
         index=None,
         placeholder="Select topic ...",
         )
-        st.write("You have chosen topic: ",topic)
-
     with col2:
+        school_options_hist = ["All"]+bktk_df_long["School"].unique().tolist()
+        filter_school_hist = st.selectbox(
+            "What school do you want to look at?",
+            options=school_options_hist,
+            index=0,
+            placeholder="Select School ...",
+            key="school_select_2",
+        )
+    with col3:
         bin_num = st.slider("Select a bin size", min_value=0, max_value=20, value=10)
-        st.write("With a bin size of: ",bin_num)
 
-    filtered_bktk_df = long_bktk_df[long_bktk_df['Topics'] == topic]
+    if filter_school_hist!="All":
+        filtered_bktk_df = bktk_df_long[bktk_df_long["School"] == filter_school_hist]
+    else:
+        filtered_bktk_df = bktk_df_long
 
-    preTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Pretest")]["Score"]
-    postTestScore = long_bktk_df[(long_bktk_df["Topics"] == topic) & (long_bktk_df["Test Type"] == "Posttest")]["Score"]
+    filtered_bktk_df = filtered_bktk_df[bktk_df_long['Topics'] == topic]
+
+    preTestScore = bktk_df_long[(bktk_df_long["Topics"] == topic) & (bktk_df_long["Test Type"] == "Pretest")]["Scores"]
+    postTestScore = bktk_df_long[(bktk_df_long["Topics"] == topic) & (bktk_df_long["Test Type"] == "Posttest")]["Scores"]
 
     if topic:
-        result = pg.wilcoxon(x=postTestScore,y=preTestScore,alternative='two-sided')
-        st.write(result)
+        try:
+            result = pg.wilcoxon(x=postTestScore,y=preTestScore,alternative='two-sided')
+            st.write(result)
+        except:
+            ...
 
     fig_hist_gen = px.histogram(
         filtered_bktk_df,
-        x="Score",
+        x="Scores",
         nbins=bin_num,
         title=f"{topic} Score Distribution (Pretest vs Posttest)",
         facet_col="Test Type",
@@ -212,29 +192,22 @@ def deployDash(data):
 
     st.title("Z-Scores")
 
-    long_bktk_df_zscore = long_bktk_df.copy()
+    long_bktk_df_zscore = filtered_bktk_df.copy()
     for typeIter in list(long_bktk_df_zscore["Test Type"].unique()):
           for topicIter in list(long_bktk_df_zscore["Topics"].unique()):
                 subset = long_bktk_df_zscore[
             (long_bktk_df_zscore["Topics"] == topicIter) & 
             (long_bktk_df_zscore["Test Type"] == typeIter)]
-                subset_mean = subset["Score"].mean()
-                subset_std = subset["Score"].std(ddof=0)
+                subset_mean = subset["Scores"].mean()
+                subset_std = subset["Scores"].std(ddof=0)
 
-                long_bktk_df_zscore.loc[(long_bktk_df_zscore["Topics"] == topicIter) & (long_bktk_df_zscore["Test Type"] == typeIter), "Score"] = (subset["Score"] - subset_mean) / subset_std
-    topicForZScore = st.selectbox(
-        "What topic do you want to explore the Z-score of?",
-        list(long_bktk_df["Topics"].unique()),
-        index=None,
-        placeholder="Select topic ...",
-        )
-    st.write("You have chosen topic: ",topicForZScore)
+                long_bktk_df_zscore.loc[(long_bktk_df_zscore["Topics"] == topicIter) & (long_bktk_df_zscore["Test Type"] == typeIter), "Scores"] = (subset["Scores"] - subset_mean) / subset_std
 
     fig_scat = px.scatter(
-        long_bktk_df_zscore[long_bktk_df_zscore["Topics"]==topicForZScore],
+        long_bktk_df_zscore[long_bktk_df_zscore["Topics"]==topic],
         x="Name of Child",
-        y="Score",
-        title=f"{topicForZScore} Z-Score Distribution (Pretest vs Posttest)",
+        y="Scores",
+        title=f"{topic} Z-Score Distribution (Pretest vs Posttest)",
         color="Test Type",
         color_discrete_map={"Pretest": "lightblue", "Posttest": "pink"}
     )
@@ -244,8 +217,25 @@ def deployDash(data):
     st.plotly_chart(fig_scat)
 
 
-
-data = st.file_uploader(label="Upload your .csv file")
+url = "https://www.angatbuhay.ph/wp-content/uploads/2023/03/cropped-Angat-buhay-logo-1.png"
+response = requests.get(url)
+image = Image.open(BytesIO(response.content))
+st.image(image, use_container_width =False,width=250)
+col1,col2 = st.columns([1,2])
+with col1:
+    st.write("### Bayan Ko Titser Ko (BKTK)")
+    st.write("##### Program Evaluation")
+with col2:
+    data = st.file_uploader(label="Upload your .csv file")
+    if data:
+        bktk_naga = pd.read_csv(data)
+        bktk_naga_long = pd.melt(bktk_naga, id_vars=["#","Name of Child","Grade Level","Area","School","Set","Class"], var_name='Topics', value_name='Scores')
+        bktk_naga_long["Test Type"] = bktk_naga_long["Topics"].apply(
+                lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
+            )
+        bktk_naga_long["Topics"] = bktk_naga_long["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
+        bktk_naga_long["Scores"] = pd.to_numeric(bktk_naga_long["Scores"], errors='coerce')
+        bktk_naga_long_cleaned = bktk_naga_long[bktk_naga_long["Scores"]<=100]
 if data:
-    df = pd.read_csv(data)
-    deployDash(df)
+    deployDash(bktk_naga_long_cleaned,bktk_naga)
+

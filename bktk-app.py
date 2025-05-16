@@ -169,8 +169,8 @@ def deployDash(data,data_wide):
 
     filtered_bktk_df = filtered_bktk_df[bktk_df_long['Topics'] == topic]
 
-    preTestScore = bktk_df_long[(bktk_df_long["Topics"] == topic) & (bktk_df_long["Test Type"] == "Pretest")]["Scores"]
-    postTestScore = bktk_df_long[(bktk_df_long["Topics"] == topic) & (bktk_df_long["Test Type"] == "Posttest")]["Scores"]
+    preTestScore = filtered_bktk_df[(filtered_bktk_df["Topics"] == topic) & (filtered_bktk_df["Test Type"] == "Pretest")]["Scores"]
+    postTestScore = filtered_bktk_df[(filtered_bktk_df["Topics"] == topic) & (filtered_bktk_df["Test Type"] == "Posttest")]["Scores"]
 
     if topic:
         try:

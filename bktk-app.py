@@ -147,7 +147,7 @@ def deployDash(data,data_wide):
         topic = st.selectbox(
         "What topic do you want to explore?",
         list(bktk_df_long["Topics"].unique()),
-        index=1,
+        index=0,
         placeholder="Select topic ...",
         )
     with col2:
@@ -155,7 +155,7 @@ def deployDash(data,data_wide):
         filter_school_hist = st.selectbox(
             "What school do you want to look at?",
             options=school_options_hist,
-            index=0,
+            index=1,
             placeholder="Select School ...",
             key="school_select_2",
         )

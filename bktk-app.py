@@ -175,7 +175,7 @@ def deployDash(data,data_wide):
     if topic:
         try:
             result = pg.wilcoxon(x=postTestScore,y=preTestScore,alternative='two-sided')
-            st.write(result)
+            # st.write(result)
         except:
             ...
 

@@ -3,7 +3,3 @@ pandas
 scipy
 plotly
 pingouin
-io
-requests
-numpy
-PIL

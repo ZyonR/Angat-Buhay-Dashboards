@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
-from scipy.stats import wilcoxon
 import plotly.express as px
-import plotly.graph_objects as go
-import pingouin as pg
 from PIL import Image
 import requests
 from io import BytesIO
@@ -13,11 +10,69 @@ st.set_page_config(
         page_title="BKTK Angat Buhay",
         layout="wide"
     )
+def population_std(x):
+    return x.std(ddof=0)
 
-def return_filtered_data(df_wide,df_long,school,set_,class_):
+def site_dependent_dash(site,df_wide,df_long):
+    ab_pink = "#fb3b9a"
+    ab_blue = "#54bfc4"
+    ab_accent = "#A9AEC9"
+
+    st.title(f"Comparison Statistics for the Site of {site}")
+    df_grouped = df_long.groupby(['School', 'Topics', 'Test Type'])["Scores"].agg(
+        Mean = "mean",
+        Std = population_std
+    ).reset_index()
+    df_grouped["CV"] = df_grouped["Std"]/df_grouped["Mean"]
+
+    col_f1,col_f2 = st.columns(2)
+    for topic in df_grouped["Topics"].unique().tolist():
+        per_topic_df = df_grouped[df_grouped["Topics"] == topic]
+
+        fig = px.bar(
+            per_topic_df,
+            x="School",
+            y="Mean",
+            color="Test Type",
+            facet_col="Test Type",
+            title=f"{topic} Mean Values per School (Pretest vs Posttest)",
+            color_discrete_map={"Pretest": ab_blue, "Posttest": ab_pink},
+            text="Mean",
+            category_orders={"Test Type": ["Pretest","Posttest"]}
+        )
+        fig.update_traces(
+            texttemplate='%{text:.2f}',
+            textposition='outside'
+        )
+        fig.update_yaxes(range=[0, 100+15])
+        with col_f1:
+            st.plotly_chart(fig)
+        fig = px.bar(
+            per_topic_df,
+            x="School",
+            y="CV",
+            color="Test Type",
+            facet_col="Test Type",
+            title=f"{topic} Coefficient of Variation Values per School (Pretest vs Posttest)",
+            color_discrete_map={"Pretest": ab_blue, "Posttest": ab_pink},
+            text="CV",
+            category_orders={"Test Type": ["Pretest","Posttest"]}
+        )
+        fig.update_traces(
+            texttemplate='%{text:.2f}',
+            textposition='outside'
+        )
+        fig.update_yaxes(range=[0, 1.1])
+        with col_f2:
+            st.plotly_chart(fig)
+
+def return_filtered_data(df_wide,df_long,area,school,set_,class_):
     filtered_df_wide = df_wide.copy()
     filtered_df_long = df_long.copy()
-
+    
+    if area!="All Areas":
+        filtered_df_wide = filtered_df_wide[filtered_df_wide["Area"]==area]
+        filtered_df_long = filtered_df_long[filtered_df_long["Area"]==area]
     if school!="All Schools":
         filtered_df_wide = filtered_df_wide[filtered_df_wide["School"]==school]
         filtered_df_long = filtered_df_long[filtered_df_long["School"]==school]
@@ -43,16 +98,24 @@ def deployDash(data,data_wide):
     col_a1,col_a2 = st.columns([1,2])
     with col_a1:
         st.write("## Choose Filtering Options")
+        # For site filtering options
+        filter_area = ["All Areas"]+bktk_df_long["Area"].unique().tolist()
+        choosen_area = st.selectbox(
+            f"What Area of Philippines you want to look at?",
+            options=filter_area,
+            index=0,
+            placeholder="Select School ...",
+        )
         # For school filtering options
-        filter_school = ["All Schools"]+bktk_df_long["School"].unique().tolist()
+        filter_school = ["All Schools"]+bktk_df_long[bktk_df_long["Area"]==choosen_area]["School"].unique().tolist()
         choosen_school = st.selectbox(
-            f"What School in {bktk_df_long['Area'].unique()[0]}?",
+            f"What School in {choosen_area}?",
             options=filter_school,
             index=0,
             placeholder="Select School ...",
         )
         # For filtering per set of said school
-        filter_set = ["All Sets"]+bktk_df_long[bktk_df_long["School"]==choosen_school]["Set"].unique().tolist()
+        filter_set = ["All Sets"]+bktk_df_long[(bktk_df_long["Area"]==choosen_area)&(bktk_df_long["School"]==choosen_school)]["Set"].unique().tolist()
         choosen_set = st.selectbox(
             f"At what set in {choosen_school}?",
             options=filter_set,
@@ -60,28 +123,30 @@ def deployDash(data,data_wide):
             placeholder=f"Select a set in {choosen_school} ...",
         )
         # For filtering per class of said set
-        filter_class = ["All Classes"]+bktk_df_long[(bktk_df_long["School"]==choosen_school)&(bktk_df_long["Set"]==choosen_set)]["Class"].unique().tolist()
+        filter_class = ["All Classes"]+bktk_df_long[(bktk_df_long["Area"]==choosen_area)&(bktk_df_long["School"]==choosen_school)&(bktk_df_long["Set"]==choosen_set)]["Class"].unique().tolist()
         choosen_class = st.selectbox(
             f"At what class in {choosen_school} of {choosen_set}?",
             options=filter_class,
             index=0,
             placeholder=f"Select a class in {choosen_school} of {choosen_set} ...",
         )
-    # Create a more 
-    df_wide,df_long = return_filtered_data(bktk_df,bktk_df_long,choosen_school,choosen_set,choosen_class)
-
+    # Create a more
+    df_wide,df_long = return_filtered_data(bktk_df,bktk_df_long,choosen_area,choosen_school,choosen_set,choosen_class)
     # Obtain Descriptive Statistics
-    df_wide_num = df_wide.select_dtypes(include='number')
-    df_w_agg=df_wide_num.describe()
-    cv = df_wide_num.std() / df_wide_num.mean()
-    df_w_agg.loc['cv'] = cv
-    df_w_agg.loc['std'] = df_wide_num.std(ddof=0)
-    df_w_agg_t = df_w_agg.T
-
-    df_w_agg_t.columns = ['Count', 'Mean',"Standard Deviation","Minimum","25%","50%","75%","Maximum","Coefficent of Variation"]
     with col_a2:
-        st.write(f"### Descriptive Statistics of {choosen_school} for {choosen_set} in {choosen_class}")
-        st.write(df_w_agg_t)
+        st.write(f"### {choosen_area} Descriptive Statistics of {choosen_school} for {choosen_set} in {choosen_class}")
+    for test_type,group in df_wide.groupby("Test Type"):
+        df_wide_num = group.select_dtypes(include='number')
+        df_w_agg=df_wide_num.describe()
+        cv = df_wide_num.std() / df_wide_num.mean()
+        df_w_agg.loc['cv'] = cv
+        df_w_agg.loc['std'] = df_wide_num.std(ddof=0)
+        df_w_agg_t = df_w_agg.T
+
+        df_w_agg_t.columns = ['Count', 'Mean',"Standard Deviation","Minimum","25%","50%","75%","Maximum","Coefficent of Variation"]
+        with col_a2:
+            st.write(f"#### {test_type} Scores")
+            st.write(df_w_agg_t)
 
     # Define each order of topics for visualization
     real_order = ["Alphabet Knowledge - Naming","Alphabet Knowledge - Sound","Decoding - Pantig","Decoding - Salita","Decoding - Parirala","Decoding - Pangungusap","Passage Reading","Comprehension"]
@@ -222,6 +287,11 @@ def deployDash(data,data_wide):
         height=600
     )
     st.plotly_chart(fig_scat)
+    if choosen_area!="All Areas":
+        bktk_df_area_specif = bktk_df[bktk_df["Area"]==choosen_area]
+        bktk_df_long_area_specif = bktk_df_long[bktk_df_long["Area"]==choosen_area]
+        site_dependent_dash(choosen_area,bktk_df_area_specif,bktk_df_long_area_specif)
+
 
 url = "https://www.angatbuhay.ph/wp-content/uploads/2023/03/cropped-Angat-buhay-logo-1.png"
 response = requests.get(url)
@@ -235,12 +305,6 @@ with col2:
     data = st.file_uploader(label="Upload your .csv file")
     if data:
         bktk_naga = pd.read_csv(data)
-        bktk_naga_long = pd.melt(bktk_naga, id_vars=["#","Name of Child","Grade Level","Area","School","Set","Class"], var_name='Topics', value_name='Scores')
-        bktk_naga_long["Test Type"] = bktk_naga_long["Topics"].apply(
-                lambda x: "Pretest" if "Pretest" in x else ("Posttest" if "Posttest" in x else None)
-            )
-        bktk_naga_long["Topics"] = bktk_naga_long["Topics"].str.replace(r"\s?\(?(Pretest|Posttest)\)?", "", regex=True)
-        bktk_naga_long["Scores"] = pd.to_numeric(bktk_naga_long["Scores"], errors='coerce')
-        bktk_naga_long_cleaned = bktk_naga_long[bktk_naga_long["Scores"]<=100]
+        bktk_naga_long = pd.melt(bktk_naga, id_vars=["#","Name of Child","Grade Level","Area","School","Set","Class","Test Type"], var_name='Topics', value_name='Scores')
 if data:
-    deployDash(bktk_naga_long_cleaned,bktk_naga)
+    deployDash(bktk_naga_long,bktk_naga)

@@ -281,7 +281,7 @@ def create_scatterplot(df_long,school,batch,set_,topic):
         st.write(f"### Scatter Plot of Students' Raw Pretest and Posttest Scores from {school} for {batch} in {set_}")
     fig_scat = px.scatter(
         filtered_topic_df,
-        x="Name of Child",
+        x="Proxy Name",
         y="Scores",
         title=f"{topic} Raw Scores of each Student (Pretest vs Posttest)",
         color="Test Type",

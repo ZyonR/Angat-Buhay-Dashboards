@@ -248,7 +248,7 @@ def create_histogtam(df_long,school,batch,set_):
     )
     for i, test_type in enumerate(["Pretest", "Posttest"], start=1):
         mean_value = mean_scores_for_hist.get(test_type)
-        if mean_value:
+        if mean_value is not None:
             fig_hist_gen.add_vline(
                 x=mean_value,
                 line_width=1,

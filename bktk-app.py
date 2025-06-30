@@ -370,13 +370,13 @@ def main_page():
                 choosen_area, choosen_school, choosen_batch, choosen_set = enable_filter(df_long,df_wide)
             df_wide,df_long = return_filtered_data(df_wide,df_long,choosen_area, choosen_school, choosen_batch, choosen_set)
             main_data_viz(df_long,df_wide)
+    if data:
+            topic = create_histogtam(df_long,choosen_school, choosen_batch, choosen_set)
+            create_scatterplot(df_long,choosen_school, choosen_batch, choosen_set,topic)
 
-    topic = create_histogtam(df_long,choosen_school, choosen_batch, choosen_set)
-    create_scatterplot(df_long,choosen_school, choosen_batch, choosen_set,topic)
-
-    if choosen_area!="All Areas":
-        bktk_df_area_specif = df_wide[df_wide["Area"]==choosen_area]
-        bktk_df_long_area_specif = df_long[df_long["Area"]==choosen_area]
-        site_dependent_dash(choosen_area,bktk_df_area_specif,bktk_df_long_area_specif)
+            if choosen_area!="All Areas":
+                bktk_df_area_specif = df_wide[df_wide["Area"]==choosen_area]
+                bktk_df_long_area_specif = df_long[df_long["Area"]==choosen_area]
+                site_dependent_dash(choosen_area,bktk_df_area_specif,bktk_df_long_area_specif)
 
 main_page()

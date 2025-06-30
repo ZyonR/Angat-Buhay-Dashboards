@@ -362,7 +362,7 @@ def main_page():
             st.title("BAYAN KO TITSER KO!")
             st.write("#### Program Monitoring and Evaluation")
         # Insert main data visualization
-        if data:
+        if data is not None:
             data = pd.read_csv(data)
             data.drop(columns=["#"],inplace=True)
             df_long,df_wide = transform_data(data)
@@ -370,7 +370,7 @@ def main_page():
                 choosen_area, choosen_school, choosen_batch, choosen_set = enable_filter(df_long,df_wide)
             df_wide,df_long = return_filtered_data(df_wide,df_long,choosen_area, choosen_school, choosen_batch, choosen_set)
             main_data_viz(df_long,df_wide)
-    if data:
+    if data is not None:
             topic = create_histogtam(df_long,choosen_school, choosen_batch, choosen_set)
             create_scatterplot(df_long,choosen_school, choosen_batch, choosen_set,topic)
 

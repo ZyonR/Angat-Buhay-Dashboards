@@ -196,6 +196,35 @@ def enable_filter(df_long, df_wide):
     return choosen_area, choosen_school, choosen_batch, choosen_set
 def population_std(x):
     return x.std(ddof=0)
+def create_all_sites_viz(df_long,chosen_domain):
+    ab_pink = "#fb3b9a"
+    ab_blue = "#54bfc4"
+    ab_accent = "#A9AEC9"
+
+    df = df_long[df_long["Domains"] == chosen_domain]
+    result = df.groupby(["Area", "Test Type"])["Scores"].mean().reset_index()
+    
+    ab_pink = "#fb3b9a"
+    ab_blue = "#54bfc4"
+
+    figure_mean_pre_v_post = px.bar(
+            result,
+            x=result["Area"],
+            y=result["Scores"],
+            color="Test Type",
+            title="Mean Test Scores of all Sites Pretest vs Posttest",
+            color_discrete_map={"Pretest": ab_blue, "Posttest": ab_pink},
+            text=result["Scores"],
+            category_orders={"Test Type": ["Pretest","Posttest"]}
+        )
+    figure_mean_pre_v_post.update_layout(barmode="group")
+    figure_mean_pre_v_post.update_traces(
+            texttemplate='%{text:.2f}',
+            textposition='outside'
+        )
+    figure_mean_pre_v_post.update_yaxes(range=[0, 100+5])
+    st.plotly_chart(figure_mean_pre_v_post)
+
 def return_filtered_data(df_wide,df_long,area,school,set_,class_):
     filtered_df_wide = df_wide.copy()
     filtered_df_long = df_long.copy()
@@ -372,8 +401,9 @@ def main_page():
             main_data_viz(df_long,df_wide)
     if data is not None:
             topic = create_histogtam(df_long,choosen_school, choosen_batch, choosen_set)
+            create_all_sites_viz(df_long,topic)
             create_scatterplot(df_long,choosen_school, choosen_batch, choosen_set,topic)
-
+            
             if choosen_area!="All Areas":
                 bktk_df_area_specif = df_wide[df_wide["Area"]==choosen_area]
                 bktk_df_long_area_specif = df_long[df_long["Area"]==choosen_area]
